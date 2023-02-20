@@ -89,7 +89,7 @@ def test(img_dir, checkpoint_path, device, labels_path, save_folder):
 
     if save_folder:
         if not os.path.isdir(save_folder):
-            os.mkdir(save_folder)
+            os.mkdirs(save_folder)
         print(f"Predictions will be saved in {save_folder}")
     else:
         save_folder = "."
