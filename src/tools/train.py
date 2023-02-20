@@ -195,13 +195,13 @@ def eval_score_function(engine):
 
 
 @click.command()
-@click.option("--batch-size")
-@click.option("--max-epochs")
-@click.option("--device", default="cuda:0")
-@click.option("--labels-path", default="src/configs/labels.yaml")
-@click.option("--checkpoint-weights", default="segformer_7data.pth")
-@click.option("--run-name", default="exp")
-@click.option("--data-dirs", "-d", default=("data/base",), multiple=True)
+@click.option("--batch-size", nargs=1)
+@click.option("--max-epochs", nargs=1)
+@click.option("--device", nargs=1, default="cuda:0")
+@click.option("--labels-path", nargs=1, default="src/configs/labels.yaml")
+@click.option("--checkpoint-weights", nargs=1, default="segformer_7data.pth")
+@click.option("--run-name", nargs=1, default="exp")
+@click.option("--data-dirs", "-d", multiple=True, default=[("data/base",)])
 def train(batch_size, max_epochs, device, labels_path, checkpoint_weights, run_name, data_dirs):
 
     if run_name:
