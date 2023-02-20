@@ -1,0 +1,112 @@
+# From docs (https://cmp.felk.cvut.cz/~tylecr1/facade/CMP_facade_DB_2013.pdf) and wikipedia
+background:
+  description: "An image of background. The unexplained part of the image is considered the background."
+  label: 1
+  pixel: !!python/tuple
+  - 170
+  - 0
+  - 0
+facade:
+  description: "An image of a facade. A facade is generally the front part or exterior of a building. Facade of a building is often the most important aspect from a design standpoint, as it sets the tone for the rest of the building"
+  label: 2
+  pixel: !!python/tuple
+  - 255
+  - 0
+  - 0
+molding:
+  description: "An image of molding. Molding is a strip of material with various profiles used to cover transitions between surfaces or for decoration"
+  label: 3
+  pixel: !!python/tuple
+  - 0
+  - 85
+  - 255
+cornice:
+  description: "An image of cornice. Cornice is generally any horizontal decorative moulding that crowns a building or furniture element"
+  label: 4
+  pixel: !!python/tuple
+  - 170
+  - 255
+  - 85
+pillar:
+  description: "An image of a column or pillar. Column or pillar in architecture and structural engineering is a structural element that transmits, through compression, the weight of the structure above to other structural elements below"
+  label: 5
+  pixel: !!python/tuple
+  - 0
+  - 0
+  - 255
+window:
+  description: "An image of a window. Window is an opening in a wall, door, or roof that allows the exchange of light and may also allow the passage of sound and sometimes air"
+  label: 6
+  pixel: !!python/tuple
+  - 255
+  - 85
+  - 0
+door:
+  description: "An image of a door. Door is a hinged or otherwise movable barrier that allows entry into and exit from an enclosure"
+  label: 7
+  pixel: !!python/tuple
+  - 255
+  - 170
+  - 0
+sill:
+  description: "An image of a sill. Sill is the horizontal structure or surface at the bottom of a window"
+  label: 8
+  pixel: !!python/tuple
+  - 0
+  - 170
+  - 255
+blind:
+  description: "An image of a window blind. A window blind is a type of window covering"
+  label: 9
+  pixel: !!python/tuple
+  - 0
+  - 255
+  - 255
+balcony:
+  description: "An image of a balcony. A balcony is a platform projecting from the wall of a building, supported by columns or console brackets, and enclosed with a balustrade, usually above the ground floor"
+  label: 10
+  pixel: !!python/tuple
+  - 85
+  - 255
+  - 170
+shop:
+  description: "An image of a shop. A shop is the casual word for a commercial establishment or for a place of business"
+  label: 11
+  pixel: !!python/tuple
+  - 0
+  - 0
+  - 170
+deco:
+  description: "An image of deco. Deco is any bigger piece of original art, paintings, reliefs, statues, when no other class is applicable"
+  label: 12
+  pixel: !!python/tuple
+  - 255
+  - 255
+  - 0
+
+#0 background: (170, 0, 0)
+#1 facade: (255, 0 ,0)
+#2 window:(255, 85, 0)
+#3 door: (255, 170, 0)
+#4 cornice: (170, 255, 85)
+#5 sill: (0, 170, 255)
+#6 balcony: (85, 255, 170)
+#7 blind: (0, 255, 255)
+#8 deco: (255, 255, 0)
+#9 molding: (0, 85, 255)
+#10 pillar: (0, 0, 255)
+#11 shop: (0, 0, 170)
+
+# From docs
+
+#Facade bounding box for a single plane wall, from pavement to roof
+#Molding horizontal decorative stripe across the facade, possibly with a repetitive texture pattern
+#Cornice decorative raised panel above the window
+#Pillar vertical decorative stripe across the facade, possibly with a repetitive texture pattern, terminators (cap, base) are labeled separately
+#Window entire glass area including borders, subtypes according to subdivision of window panes; all visible windows are annotated even if not within Facade.
+#Door entrance
+#Sill decorative raised panel or stripe under the window
+#Blind any functional obstacle to light on the window, both open or closed
+#Balcony including railing, overlap with window when glass is visible behind
+#Shop shop windows, commercials, signs
+#Deco any bigger piece of original art, paintings, reliefs, statues, when no other class is applicable
