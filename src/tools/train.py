@@ -200,9 +200,9 @@ def eval_score_function(engine):
 @click.option("--device", default="cuda:0")
 @click.option("--labels-path", default="src/configs/labels.yaml")
 @click.option("--checkpoint-weights", default="segformer_7data.pth")
+@click.option("--run-name", default="exp")
 @click.option("--data-dirs", "-d", default=("data/base",), multiple=True)
-@click.option("--run-name", default=None)
-def train(batch_size, max_epochs, device, labels_path, checkpoint_weights, data_dirs, run_name):
+def train(batch_size, max_epochs, device, labels_path, checkpoint_weights, run_name, data_dirs):
 
     if run_name:
         train_dir = f"output/train_cmp/{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}_{run_name}"
