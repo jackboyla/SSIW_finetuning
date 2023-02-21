@@ -102,7 +102,9 @@ class CMPDataset(Dataset):
         self.transform, self.ann_transform = get_data_transforms()
         self.items = []
         for data_dir in data_dirs:
-            for file in os.listdir(data_dir):
+            files = os.listdir(data_dir)
+            assert len(files) > 0, f"{data_dir} is empty"
+            for file in files:
                 if file.endswith(".jpg"):
                     img_path = os.path.join(data_dir, file)
                     ann_path = os.path.join(data_dir, file.replace(".jpg", ".png"))
