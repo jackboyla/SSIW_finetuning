@@ -79,10 +79,10 @@ def plot(
 def test(run_dir, img_dir):
 
     try: 
-        with open (f"{run_dir}/config_yaml", "r") as file:
+        with open (f"{run_dir}/config.yaml", "r") as file:
             config = yaml.safe_load(file)
     except Exception as e:
-        print('Error reading the config file')
+        raise('Error reading the config file')
 
     if img_dir:
         data_dirs = img_dir
@@ -90,8 +90,6 @@ def test(run_dir, img_dir):
     else:
         data_dirs = config['files']['test_data_dirs']
     checkpoint_weights = config['files']['save_checkpoint_weights']
-    output_folder = config['files']['output_folder']
-    batch_size = int(config['hyperparams']['batch_size'])
 
     print("CONFIG: \n", config, "\n")
     
