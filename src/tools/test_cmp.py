@@ -2,6 +2,7 @@ import os.path
 import sys
 import os
 import glob
+import yaml
 conf_path = os.getcwd()
 sys.path.append(conf_path)
 
@@ -52,7 +53,7 @@ def predict(x: torch.Tensor, model: nn.Module, embeddings: torch.Tensor):
 
 
 def plot(
-    img, labels, save_folder, 
+    img, labels, 
     pred_path, target=None
     ):
     labels = labels.numpy()
@@ -67,40 +68,51 @@ def plot(
         axs[2].imshow(target)
         axs[2].axis('off')
         axs[2].set_title('Target')
-    if pred_path:
-        plt.savefig(pred_path)
+    plt.savefig(pred_path)
     # plt.show()
     plt.close()
 
 
 @click.command()
-@click.argument("img-dir")
-@click.argument("checkpoint-path")
-@click.option("--device", default="cuda:0")
-@click.option("--labels-path", default="src/configs/labels.yaml")
-@click.option("--save-folder", default=None)
-def test(img_dir, checkpoint_path, device, labels_path, save_folder):
+@click.argument("run-dir")
+@click.option("--img-dir", default=None, multiple=True)
+def test(run_dir, img_dir):
 
-    device = torch.device(device)
+    try: 
+        with open (f"{run_dir}/config_yaml", "r") as file:
+            config = yaml.safe_load(file)
+    except Exception as e:
+        print('Error reading the config file')
+
+    if img_dir:
+        data_dirs = img_dir
+        config['files']['test_data_dirs'] = data_dirs
+    else:
+        data_dirs = config['files']['test_data_dirs']
+    checkpoint_weights = config['files']['save_checkpoint_weights']
+    output_folder = config['files']['output_folder']
+    batch_size = int(config['hyperparams']['batch_size'])
+
+    print("CONFIG: \n", config, "\n")
+    
+
+    device = torch.device(config['device'])
     img_loader = ImageLoader(device)
     device = torch.device(device)
 
-    exp_path = '/'.join(checkpoint_path.split('/')[:-1])
-
-    if save_folder:
-        if not os.path.isdir(save_folder):
-            os.mkdirs(save_folder)
-        print(f"Predictions will be saved in {save_folder}")
-    else:
-        save_folder = "."
+    pred_dir = 'predictions'
+    os.mkdir('predictions')
+    print(f"Predictions will be saved in {run_dir}/{pred_dir}/")
 
     # load label embeddings and model
-    embs = load_embeddings(labels_path)
+    embs = load_embeddings(config['files']['labels_path'])
     embs = embs.to(device)
-    model = get_model(num_classes=512, checkpoint_weights=checkpoint_path).to(device).eval()
+    model = get_model(num_classes=512, checkpoint_weights=checkpoint_weights).to(device).eval()
 
     # find all test images
-    test_images = glob.glob(img_dir + "*.jpg")
+    test_images = []
+    for dir in data_dirs:
+        test_images.extend(glob.glob(dir + "*.jpg"))
 
     
     dice_loss_fn = CustomDiceLoss(embs)
@@ -113,37 +125,41 @@ def test(img_dir, checkpoint_path, device, labels_path, save_folder):
         pred, labels = predict(x, model, embs)
 
         tgt_path = test_image_path.replace('.jpg', '.png')
-        if save_folder:
-            pred_path = save_folder + "/" + test_image_path.split('/')[-1].split('.')[0] + "_pred_vis.png"
-            prediction_paths.append(pred_path)
-        else:
-            pred_path = None
+
+        pred_path = pred_dir + "/" + test_image_path.split('/')[-1].split('.')[0] + "_pred_vis.png"
+        prediction_paths.append(pred_path)
         
         if os.path.isfile(tgt_path):
-
 
             target = PIL.Image.open(tgt_path)
 
             _, ann_transform = get_data_transforms()
             ann = ann_transform(target)#.squeeze(0)
             ann = ann - 1  # change indexing
-
             ann_one_hot = ann_to_one_hot(ann, embs.shape[0])
 
             dice_loss = dice_loss_fn(pred.unsqueeze(0), target, ann_one_hot)
             dice_losses.append(dice_loss)
 
-            plot(img, labels, save_folder, pred_path, target=target)
+            plot(img, labels, pred_path, target=target)
         else:
-            plot(img, labels, save_folder, pred_path)
+            plot(img, labels, pred_path)
     
-    df = pd.DataFrame(list(zip(test_images, prediction_paths, dice_losses)),
-                columns =['image_path', 'prediction_path', 'dice_loss'])
-    df.to_csv(f"{exp_path}/test_out.csv")
-    print(f"Model performance saved to {exp_path}/test_out.csv")
+    df = pd.DataFrame(
+        list(zip(test_images, prediction_paths, dice_losses)),
+        columns =['image_path', 'prediction_path', 'dice_loss']
+        )
+    performance_csv = f"{run_dir}/test_out.csv"
+    df.to_csv(performance_csv)
+    print(f"Model performance saved to {performance_csv}")
 
     result = {"mean": np.mean(dice_losses), "std":np.std(dice_losses)}
-    print(f"Model: {checkpoint_path}\n Dice Loss {result}")
+    print(f"Model: {checkpoint_weights}\nDice Loss {result}")
+
+    config['performance']['dice_loss'] = result
+
+    with open (f"{run_dir}/config_yaml", "w") as file:
+        config = yaml.dump(file)
 
 
 if __name__ == "__main__":

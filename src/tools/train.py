@@ -206,7 +206,7 @@ def create_eval_score_function(
 
 
 @click.command()
-@click.option("--config-yaml", nargs=1)
+@click.argument("--config-yaml")
 def train(config_yaml):
 
     try: 

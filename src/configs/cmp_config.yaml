@@ -3,6 +3,7 @@ device: 'cuda:0'
 
 files:
   data_dirs: ['data/base/base']
+  test_data_dirs: ['data/extended/extended']
   labels_path: 'src/configs/labels.yaml'
   output_folder: 'output/train_cmp'
   load_checkpoint_weights: 'segformer_7data.pth'
