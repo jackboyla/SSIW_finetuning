@@ -208,7 +208,7 @@ def train(batch_size, max_epochs, device, labels_path, checkpoint_weights, run_n
         train_dir = f"output/train_cmp/{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}_{run_name}"
     else:
         train_dir = f"output/train_cmp/{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}"
-    os.mkdirs(train_dir)
+    os.makedirs(train_dir)
     print(f"All runs files will be saved to : {train_dir}")
     max_epochs = int(max_epochs)
     batch_size = int(batch_size)
