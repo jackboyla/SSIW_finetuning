@@ -197,7 +197,7 @@ def create_eval_score_function(
     _: Engine, 
     watch_metric: str
 ) -> Callable:
-    def eval_score_function(engine: Engine, watch_metric: str):
+    def eval_score_function(engine: Engine, watch_metric: str = watch_metric):
         eval_score = engine.state.metrics[watch_metric]
         # Objects with highest scores will be retained.
         return eval_score
@@ -215,6 +215,8 @@ def train(config_yaml):
     except Exception as e:
         print('Error reading the config file')
 
+    print("CONFIG: \n", config, "\n")
+
     data_dirs = config['files']['data_dirs']
     checkpoint_weights = config['files']['load_checkpoint_weights']
     output_folder = config['files']['output_folder']
@@ -226,7 +228,7 @@ def train(config_yaml):
     embs = load_embeddings(config['files']['labels_path'])
 
     os.makedirs(train_dir)
-    print(f"All runs files will be saved to : {train_dir}")
+    print(f"All run files will be saved to : {train_dir}")
     train_loader, val_loader = create_loaders(data_dirs, batch_size=batch_size)
     model = get_model(num_classes=512, checkpoint_weights=checkpoint_weights).to(device)
     embs = embs.to(device)
@@ -236,7 +238,7 @@ def train(config_yaml):
     params = list(model.parameters())
     # add learnable temp parameter from HDLoss
     # params.extend(list(loss_fn.parameters()))
-    optimizer = optim.Adam(lr=0.0005, params=params)
+    optimizer = optim.Adam(lr=float(config['hyperparams']['learning_rate']), params=params)
 
     # TRAINER
     step_fn = create_step_fn(model, optimizer, loss_fn, embs, device)

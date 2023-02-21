@@ -13,6 +13,7 @@ hyperparams:
   max_epochs: 150
   batch_size: 4
   eval_every: 2
+  learning_rate: 0.0005
   checkpointing:
     save_every: 5
     n_saved: 10
