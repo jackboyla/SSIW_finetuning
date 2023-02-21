@@ -188,33 +188,45 @@ def create_log_fn(trainer: Engine, event: Events, train_dir: str):
     return log_metrics
 
 
-def eval_score_function(engine):
-    eval_score = engine.state.metrics['val_loss']
-    # Objects with highest scores will be retained.
-    return eval_score
+# def eval_score_function(engine, watch_metric):
+#     eval_score = engine.state.metrics['val_loss']
+#     # Objects with highest scores will be retained.
+#     return eval_score
+
+def create_eval_score_function(
+    _: Engine, 
+    watch_metric: str
+) -> Callable:
+    def eval_score_function(engine: Engine, watch_metric: str):
+        eval_score = engine.state.metrics[watch_metric]
+        # Objects with highest scores will be retained.
+        return eval_score
+
+    return eval_score_function
 
 
 @click.command()
-@click.option("--batch-size", nargs=1)
-@click.option("--max-epochs", nargs=1)
-@click.option("--device", nargs=1, default="cuda:0")
-@click.option("--labels-path", nargs=1, default="src/configs/labels.yaml")
-@click.option("--checkpoint-weights", nargs=1, default="segformer_7data.pth")
-@click.option("--run-name", nargs=1, default="exp")
-@click.option("--data-dirs", "-d", multiple=True, default=[("data/base",)])
-def train(batch_size, max_epochs, device, labels_path, checkpoint_weights, run_name, data_dirs):
+@click.option("--config-yaml", nargs=1)
+def train(config_yaml):
 
-    if run_name:
-        train_dir = f"output/train_cmp/{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}_{run_name}"
-    else:
-        train_dir = f"output/train_cmp/{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}"
+    try: 
+        with open (config_yaml, 'r') as file:
+            config = yaml.safe_load(file)
+    except Exception as e:
+        print('Error reading the config file')
+
+    data_dirs = config['files']['data_dirs']
+    checkpoint_weights = config['files']['load_checkpoint_weights']
+    output_folder = config['files']['output_folder']
+    run_name = config['hyperparams']['run_name']
+    train_dir = f"{output_folder}/{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}_{run_name}"
+    max_epochs = int(config['hyperparams']['max_epochs'])
+    batch_size = int(config['hyperparams']['batch_size'])
+    device = torch.device(config['device'])
+    embs = load_embeddings(config['files']['labels_path'])
+
     os.makedirs(train_dir)
     print(f"All runs files will be saved to : {train_dir}")
-    max_epochs = int(max_epochs)
-    batch_size = int(batch_size)
-
-    device = torch.device(device)
-    embs = load_embeddings(labels_path)
     train_loader, val_loader = create_loaders(data_dirs, batch_size=batch_size)
     model = get_model(num_classes=512, checkpoint_weights=checkpoint_weights).to(device)
     embs = embs.to(device)
@@ -223,7 +235,7 @@ def train(batch_size, max_epochs, device, labels_path, checkpoint_weights, run_n
     dice_loss_fn = CustomDiceLoss(embs).to(device)
     params = list(model.parameters())
     # add learnable temp parameter from HDLoss
-    params.extend(list(loss_fn.parameters()))
+    # params.extend(list(loss_fn.parameters()))
     optimizer = optim.Adam(lr=0.0005, params=params)
 
     # TRAINER
@@ -231,11 +243,11 @@ def train(batch_size, max_epochs, device, labels_path, checkpoint_weights, run_n
     trainer = Engine(step_fn)
     print_metrics = create_log_fn(trainer, Events.ITERATION_COMPLETED, train_dir)
     loss_running_average(trainer, prefix="train_")
-    trainer.add_event_handler(Events.EPOCH_COMPLETED, print_metrics) #
+    trainer.add_event_handler(Events.EPOCH_COMPLETED, print_metrics)
     ProgressBar().attach(trainer)
     to_save = {"model": model, "optimizer": optimizer, "trainer": trainer}
-    checkpointer = Checkpoint(to_save, f"{train_dir}/", n_saved=10)
-    trainer.add_event_handler(Events.EPOCH_COMPLETED(every=5), checkpointer)
+    checkpointer = Checkpoint(to_save, f"{train_dir}/", n_saved=int(config['hyperparams']['checkpointing']['n_saved']))
+    trainer.add_event_handler(Events.EPOCH_COMPLETED(every=int(config['hyperparams']['checkpointing']['save_every'])), checkpointer)
     trainer.add_event_handler(Events.COMPLETED, checkpointer)
 
     # EVALUATOR
@@ -248,19 +260,23 @@ def train(batch_size, max_epochs, device, labels_path, checkpoint_weights, run_n
     for name, metric in metrics.items():
         metric.attach(evaluator, name)
     evaluator.add_event_handler(Events.COMPLETED, print_metrics)
-    early_stopping = EarlyStopping(patience=5, score_function=eval_score_function, trainer=trainer)
+    eval_score_function = create_eval_score_function(evaluator, config['hyperparams']['early_stopping']['watch_metric'])
+    early_stopping = EarlyStopping(
+        patience=int(config['hyperparams']['early_stopping']['patience']), 
+        score_function=eval_score_function, trainer=trainer
+        )
     evaluator.add_event_handler(Events.EPOCH_COMPLETED, early_stopping)
     ProgressBar().attach(evaluator)
 
     def eval(_: Engine):
         evaluator.run(val_loader)
 
-    trainer.add_event_handler(Events.EPOCH_COMPLETED(every=2), eval)
+    trainer.add_event_handler(Events.EPOCH_COMPLETED(every=int(config['hyperparams']['eval_every'])), eval)
 
     trainer.run(train_loader, max_epochs=max_epochs)
 
     sd = model.state_dict()
-    torch.save({"state_dict": sd}, f"{train_dir}/out.pth")
+    torch.save({"state_dict": sd}, f"{train_dir}/{config['files']['save_checkpoint_weights']}")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,21 @@
+
+device: 'cuda:0'
+
+files:
+  data_dirs: ['data/base/base']
+  labels_path: 'src/configs/labels.yaml'
+  output_folder: 'output/train_cmp'
+  load_checkpoint_weights: 'segformer_7data.pth'
+  save_checkpoint_weights: 'out.pth'
+
+hyperparams:
+  run_name: 'initial_finetune'
+  max_epochs: 150
+  batch_size: 4
+  eval_every: 2
+  checkpointing:
+    save_every: 5
+    n_saved: 10
+  early_stopping:
+    patience: 10
+    watch_metric: 'val_loss'
