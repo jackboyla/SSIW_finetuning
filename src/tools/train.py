@@ -183,15 +183,10 @@ def create_log_fn(trainer: Engine, event: Events, train_dir: str):
             print(f"Step: {current_step} | {k}: {v}")
         logger.send()
 
-        with open(f"{train_dir}/logs.json", "w") as fp:
+        with open(os.path.join(train_dir, "logs.json"), "w") as fp:
             json.dump(logger.logger.log_history, fp)
     return log_metrics
 
-
-# def eval_score_function(engine, watch_metric):
-#     eval_score = engine.state.metrics['val_loss']
-#     # Objects with highest scores will be retained.
-#     return eval_score
 
 def create_eval_score_function(
     _: Engine, 
@@ -206,14 +201,14 @@ def create_eval_score_function(
 
 
 @click.command()
-@click.argument("--config-yaml")
+@click.argument("config_yaml")
 def train(config_yaml):
 
     try: 
         with open (config_yaml, 'r') as file:
             config = yaml.safe_load(file)
     except Exception as e:
-        print('Error reading the config file')
+        raise ValueError('Error reading the config file')
 
     print("CONFIG: \n", config, "\n")
 
@@ -229,7 +224,7 @@ def train(config_yaml):
 
     os.makedirs(train_dir)
     print(f"All run files will be saved to : {train_dir}")
-    with open(f"{train_dir}/config.yaml", "w") as file:
+    with open(os.path.join(train_dir, "config.yaml"), "w") as file:
         yaml.dump(config, file)
     train_loader, val_loader = create_loaders(data_dirs, batch_size=batch_size)
     model = get_model(num_classes=512, checkpoint_weights=checkpoint_weights).to(device)
@@ -280,7 +275,7 @@ def train(config_yaml):
     trainer.run(train_loader, max_epochs=max_epochs)
 
     sd = model.state_dict()
-    torch.save({"state_dict": sd}, f"{train_dir}/{config['files']['save_checkpoint_weights']}")
+    torch.save({"state_dict": sd}, os.path.join(train_dir, config['files']['save_checkpoint_weights']))
 
 
 if __name__ == "__main__":

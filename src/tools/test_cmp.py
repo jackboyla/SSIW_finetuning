@@ -56,7 +56,7 @@ def plot(
     img, labels, 
     pred_path, target=None
     ):
-    labels = labels.numpy()
+    labels = labels.to('cpu').numpy()
     fig, axs = plt.subplots(1, 3)
     axs[0].imshow(img)
     axs[0].set_title('Input')
@@ -79,28 +79,29 @@ def plot(
 def test(run_dir, img_dir):
 
     try: 
-        with open (f"{run_dir}/config.yaml", "r") as file:
+        with open (os.path.join(run_dir, "config.yaml"), "r") as file:
             config = yaml.safe_load(file)
     except Exception as e:
-        raise('Error reading the config file')
+        raise ValueError('Error reading the config file')
 
     if img_dir:
-        data_dirs = img_dir
+        data_dirs = list(img_dir)
         config['files']['test_data_dirs'] = data_dirs
     else:
         data_dirs = config['files']['test_data_dirs']
-    checkpoint_weights = config['files']['save_checkpoint_weights']
+    checkpoint_weights = os.path.join(run_dir, config['files']['save_checkpoint_weights'])
 
     print("CONFIG: \n", config, "\n")
     
 
     device = torch.device(config['device'])
     img_loader = ImageLoader(device)
-    device = torch.device(device)
+    device = torch.device(device) if torch.cuda.is_available() else 'cpu'
 
-    pred_dir = 'predictions'
-    os.mkdir('predictions')
-    print(f"Predictions will be saved in {run_dir}/{pred_dir}/")
+    pred_dir = os.path.join(run_dir, "predictions")
+    if not os.path.isdir(pred_dir):
+        os.mkdir(pred_dir)
+    print(f"Predictions will be saved in {pred_dir}")
 
     # load label embeddings and model
     embs = load_embeddings(config['files']['labels_path'])
@@ -110,7 +111,7 @@ def test(run_dir, img_dir):
     # find all test images
     test_images = []
     for dir in data_dirs:
-        test_images.extend(glob.glob(dir + "*.jpg"))
+        test_images.extend(glob.glob(dir + "/*.jpg"))
 
     
     dice_loss_fn = CustomDiceLoss(embs)
@@ -121,10 +122,12 @@ def test(run_dir, img_dir):
         img, x = img_loader(test_image_path)
 
         pred, labels = predict(x, model, embs)
+        pred, labels = pred.to(device), labels.to(device)
 
         tgt_path = test_image_path.replace('.jpg', '.png')
 
-        pred_path = pred_dir + "/" + test_image_path.split('/')[-1].split('.')[0] + "_pred_vis.png"
+        test_image_id = test_image_path.split('/')[-1].split('.')[0]
+        pred_path = os.path.join(pred_dir, test_image_id + "_pred_vis.png")
         prediction_paths.append(pred_path)
         
         if os.path.isfile(tgt_path):
@@ -133,31 +136,37 @@ def test(run_dir, img_dir):
 
             _, ann_transform = get_data_transforms()
             ann = ann_transform(target)#.squeeze(0)
+            ann = ann.to(device)
             ann = ann - 1  # change indexing
             ann_one_hot = ann_to_one_hot(ann, embs.shape[0])
 
-            dice_loss = dice_loss_fn(pred.unsqueeze(0), target, ann_one_hot)
-            dice_losses.append(dice_loss)
+            dice_loss = dice_loss_fn(pred, ann_one_hot)
+            dice_losses.append(dice_loss.to('cpu'))
 
             plot(img, labels, pred_path, target=target)
         else:
             plot(img, labels, pred_path)
     
+    # prepare output .csv
+    dice_losses = [x.item() for x in dice_losses]
     df = pd.DataFrame(
         list(zip(test_images, prediction_paths, dice_losses)),
         columns =['image_path', 'prediction_path', 'dice_loss']
         )
-    performance_csv = f"{run_dir}/test_out.csv"
+    df['image_id'] = df['image_path'].str.split('/').str[-1]
+    performance_csv = os.path.join(run_dir, "test_out.csv")
     df.to_csv(performance_csv)
     print(f"Model performance saved to {performance_csv}")
 
-    result = {"mean": np.mean(dice_losses), "std":np.std(dice_losses)}
+    m = float(np.mean(dice_losses))
+    std = float(np.std(dice_losses))
+    result = {"mean": m, "std": std}
     print(f"Model: {checkpoint_weights}\nDice Loss {result}")
 
-    config['performance']['dice_loss'] = result
-
-    with open (f"{run_dir}/config_yaml", "w") as file:
-        config = yaml.dump(file)
+    # add output to YAML config and save
+    config['performance'] = {"dice_loss": result}
+    with open (os.path.join(run_dir, "config.yaml"), "w") as file:
+        yaml.dump(config, file)
 
 
 if __name__ == "__main__":
