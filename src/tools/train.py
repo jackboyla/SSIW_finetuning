@@ -229,6 +229,8 @@ def train(config_yaml):
 
     os.makedirs(train_dir)
     print(f"All run files will be saved to : {train_dir}")
+    with open(f"{train_dir}/config.yaml", "w") as file:
+        yaml.dump(config, file)
     train_loader, val_loader = create_loaders(data_dirs, batch_size=batch_size)
     model = get_model(num_classes=512, checkpoint_weights=checkpoint_weights).to(device)
     embs = embs.to(device)
