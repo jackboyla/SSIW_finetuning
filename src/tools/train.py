@@ -234,7 +234,7 @@ def train(config_yaml):
     dice_loss_fn = CustomDiceLoss(embs).to(device)
     params = list(model.parameters())
     # add learnable temp parameter from HDLoss
-    # params.extend(list(loss_fn.parameters()))
+    params.extend(list(loss_fn.parameters()))
     optimizer = optim.Adam(lr=float(config['hyperparams']['learning_rate']), params=params)
 
     # TRAINER

@@ -19,9 +19,9 @@ class HDLoss(nn.Module):
         super().__init__()
         self.log_softmax = nn.LogSoftmax(dim=-1)
         # learnable temperature parameter
-        # self.logit_scale = torch.nn.Parameter(logit_scale)
-        # self.logit_scale.requires_grad = True
-        self.logit_scale = logit_scale
+        self.logit_scale = torch.nn.Parameter(logit_scale)
+        self.logit_scale.requires_grad = True
+        # self.logit_scale = logit_scale
         self.embeddings = embeddigns
 
     def __call__(
