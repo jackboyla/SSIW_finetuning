@@ -18,6 +18,7 @@ hyperparams:
   checkpointing:
     save_every: 5
     n_saved: 10
+  freeze: True
   early_stopping:
     patience: 10
     watch_metric: 'val_loss'

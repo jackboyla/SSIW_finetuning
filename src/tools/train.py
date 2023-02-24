@@ -226,8 +226,9 @@ def train(config_yaml):
     print(f"All run files will be saved to : {train_dir}")
     with open(os.path.join(train_dir, "config.yaml"), "w") as file:
         yaml.dump(config, file)
+        
     train_loader, val_loader = create_loaders(data_dirs, batch_size=batch_size)
-    model = get_model(num_classes=512, checkpoint_weights=checkpoint_weights).to(device)
+    model = get_model(num_classes=512, checkpoint_weights=checkpoint_weights, freeze=config['hyperparams']['freeze']).to(device)
     embs = embs.to(device)
     logit_scale = get_logit_scale(checkpoint_weights=checkpoint_weights)
     loss_fn = HDLoss(embs, logit_scale).to(device)
