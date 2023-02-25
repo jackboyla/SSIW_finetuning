@@ -1,0 +1,26 @@
+device: cuda:0
+files:
+  data_dirs:
+  - data/base/base
+  labels_path: src/configs/labels.yaml
+  load_checkpoint_weights: segformer_7data.pth
+  output_folder: output/train_cmp
+  save_checkpoint_weights: out.pth
+  test_data_dirs:
+  - data/extended/extended
+hyperparams:
+  batch_size: 4
+  checkpointing:
+    n_saved: 10
+    save_every: 5
+  early_stopping:
+    patience: 10
+    watch_metric: val_dice_loss
+  eval_every: 2
+  learning_rate: 0.0005
+  max_epochs: 150
+  run_name: learnable_temp_watch_val_dice_loss
+performance:
+  dice_loss:
+    mean: 0.3386301629637417
+    std: 0.10906255159950705
