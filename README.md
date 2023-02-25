@@ -5,7 +5,7 @@ This fork contains additional code for training, evaluation and loss computation
 
 I have also added more suitable descriptions for the CMP Facade labels.
 
-![](src\ann_imgs\cmp_x0083_pred_vis.png)
+![Visualised Prediction](src/ann_imgs/cmp_x0083_pred_vis.png)
 
 # Data
 
