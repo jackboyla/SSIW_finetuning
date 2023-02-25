@@ -25,7 +25,7 @@ The following experiments wer carried out:
 
 3. Due to the tendency for large models such as the Segformer to overfit on small datasets, all parameters in the model have been frozen apart from the patch embedding layer.
 
-4. Model 2. was trained with early stopping now watching the dice loss metric during validation.
+4. Model 2 was trained with early stopping now watching the dice loss metric during validation.
 
 5. Model 4 was used with frozen model parameters.
 
@@ -36,7 +36,7 @@ Batch size and image size are chosen to suit my available resources.
 
 | Experiment      | Dice Loss Mean | Dice Loss Std     |
 | :---        |    :----   |          :--- |
-| 1      | 0.33610681215660615       | 10716346525468866   |
+| 1      | 0.33610681215660615       | 0.10716346525468866   |
 | 2   | 0.3210149120800851        | 0.10403830232390819      |
 | 3  | 0.39679140630259846      | 0.12017719375905421     |
 | 4      | 0.3386301629637417       | 0.10906255159950705   |
